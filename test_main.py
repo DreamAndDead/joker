@@ -97,6 +97,20 @@ class TestMain(unittest.TestCase):
             ]
         )
 
+    def test_get_hand_double(self):
+        all_cards = parse_cards("333444456678900A22")
+        all_hand_cards = [hand_cards for (_, hand_cards), _ in get_hands(HandKind.DOUBLE, all_cards)]
+
+        self.assertCountEqual(
+            all_hand_cards,
+            [
+                parse_cards("33"),
+                parse_cards("44"),
+                parse_cards("66"),
+                parse_cards("00"),
+                parse_cards("22"),
+            ]
+        )
 
 
 if __name__ == '__main__':

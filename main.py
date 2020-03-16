@@ -101,13 +101,12 @@ def get_hands(kind, cards):
                 if cards_in(hand_cards, cards):
                     yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
-    elif kind == 'double':
-        unique_cards = list(set(cards))
-
+    elif kind is HandKind.DOUBLE:
         for c in unique_cards:
-            d = [c] * 2
-            if cards_in(d, cards):
-                yield ('double', d), cards_sub(cards, d)
+            hand_cards = [c] * 2
+            if cards_in(hand_cards, cards):
+                yield (kind, hand_cards), cards_sub(cards, hand_cards)
+
 
     elif kind == 'double straight':
         unique_cards = list(set(cards))
