@@ -108,125 +108,121 @@ def get_hands(kind, cards):
                 yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
 
-    elif kind == 'double straight':
-        unique_cards = list(set(cards))
+    elif kind is HandKind.DOUBLE_STRAIGHT:
         min_len = 3
         max_len = len(unique_cards)
 
-        if max_len < min_len:
-            return
-
         for l in range(min_len, max_len + 1):
             for c in unique_cards:
-                s = list(range(c, c + l))
-                ds = [e for e in s for i in range(2)]
-                if cards_in(ds, cards):
-                    yield ('double straight', ds), cards_sub(cards, ds)
+                hand_cards = [e for e in range(c, c+l) for i in range(2)]
+                if cards_in(hand_cards, cards):
+                    yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
-    elif kind == 'triple':
-        unique_cards = list(set(cards))
-
+    elif kind is HandKind.TRIPLE:
         for c in unique_cards:
-            t = [c] * 3
-            if cards_in(t, cards):
-                yield ('double', t), cards_sub(cards, t)
+            hand_cards = [c] * 3
+            if cards_in(hand_cards, cards):
+                yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
-    elif kind == 'triple plus single':
-        for t, r in get_hands('triple', cards):
-            for s, rest in get_hands('single', r):
+    elif kind is HandKind.TRIPLE_PLUS_SINGLE:
+        for t, r in get_hands(HandKind.TRIPLE, cards):
+            for s, rest in get_hands(HandKind.SINGLE, r):
                 if t[1][0] != s[1][0]:
-                    tps = t[1] + s[1]
-                    yield ('triple plus single', tps), rest
+                    hand_cards = t[1] + s[1]
+                    yield (kind, hand_cards), rest
 
-    elif kind == 'triple plus double':
-        for t, r in get_hands('triple', cards):
-            for d, rest in get_hands('double', r):
-                if t[1][0] != d[1][0]:
-                    tpd = t[1] + d[1]
-                    yield ('triple plus double', tpd), rest
+    elif kind is HandKind.TRIPLE_PLUS_DOUBLE:
+        for t, r in get_hands(HandKind.TRIPLE, cards):
+            for d, rest in get_hands(HandKind.DOUBLE, r):
+                hand_cards = t[1] + d[1]
+                yield (kind, hand_cards), rest
 
-    elif kind == 'plane':
-        unique_cards = list(set(cards))
+    elif kind is HandKind.PLANE:
         min_len = 2
         max_len = len(unique_cards)
 
         for l in range(min_len, max_len + 1):
             for c in unique_cards:
-                s = list(range(c, c + l))
-                p = [e for e in s for i in range(3)]
-                if cards_in(p, cards):
-                    yield ('plane', p), cards_sub(cards, p)
+                hand_cards = [e for e in range(c, c + l) for i in range(3)]
+                if cards_in(hand_cards, cards):
+                    yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
-    elif kind == 'plane plus single':
-        for p, rest in get_hands('plane', cards):
-            p_len = len(p[1]) // 3
+    elif kind is HandKind.PLANE_PLUS_SINGLE:
+        for p, rest in get_hands(HandKind.PLANE, cards):
+            l = len(p[1]) // 3
+            rest_singles = [s[1] for s, _ in get_hands(HandKind.SINGLE, rest)]
 
-            singles = [s[1] for s, _ in get_hands('single', rest)]
+            for singles in combinations(rest_singles, l):
+                singles = list(chain.from_iterable(singles))
+                hand_cards = p[1] + singles
+                yield (kind, hand_cards), cards_sub(rest, singles)
 
-            for s in combinations(singles, p_len):
-                s = chain.from_iterable(s)
-                pps = p[1] + s
-                yield ('plane plus single', pps), cards_sub(rest, s)
+    elif kind is HandKind.PLANE_PLUS_DOUBLE:
+        for p, rest in get_hands(HandKind.PLANE, cards):
+            l = len(p[1]) // 3
+            rest_doubles = [d[1] for d, _ in get_hands(HandKind.DOUBLE, rest)]
 
-    elif kind == 'plane plus double':
-        for p, rest in get_hands('plane', cards):
-            p_len = len(p[1]) // 3
+            for doubles in combinations(rest_doubles, l):
+                doubles = list(chain.from_iterable(doubles))
+                hand_cards = p[1] + doubles
+                yield (kind, hand_cards), cards_sub(rest, doubles)
 
-            doubles = [d[1] for d, _ in get_hands('double', rest)]
-
-            for d in combinations(doubles, p_len):
-                d = chain.from_iterable(d)
-                ppd = p[1] + d
-                yield ('plane plus double', ppd), cards_sub(rest, d)
-
-    elif kind == 'bomb':
-        unique_cards = list(set(cards))
-
+    elif kind is HandKind.BOMB:
         for c in unique_cards:
-            b = [c] * 4
-            if cards_in(d, cards):
-                yield ('bomb', b), cards_sub(cards, b)
+            hand_cards = [c] * 4
+            if cards_in(hand_cards, cards):
+                yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
-    elif kind == 'rocket':
+    elif kind is HandKind.ROCKET:
         little = symbol_level_map['L']
         big = symbol_level_map['B']
+        
         if little in cards and big in cards:
-            r = [little, big]
-            yield ('rocket', r), cards_sub(cards, r)
+            hand_cards = [little, big]
+            yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
-    elif kind == 'quadruple plus single':
-        for q, rest in get_hands('bomb', cards):
+    elif kind is HandKind.QUADRUPLE_PLUS_SINGLE:
+        for b, rest in get_hands(HandKind.BOMB, cards):
+            l = 2
+            rest_singles = [s[1] for s, _ in get_hands(HandKind.SINGLE, rest)]
 
-            singles = [s[1] for s, _ in get_hands('single', rest)]
+            for singles in combinations(rest_singles, l):
+                singles = list(chain.from_iterable(singles))
+                hand_cards = b[1] + singles
+                yield (kind, hand_cards), cards_sub(rest, singles)
 
-            for s in combinations(singles, 2):
-                s = chain.from_iterable(s)
-                qps = q[1] + s
-                yield ('plane plus single', pps), cards_sub(rest, s)
+    elif kind is HandKind.QUADRUPLE_PLUS_DOUBLE:
+        for b, rest in get_hands(HandKind.BOMB, cards):
+            l = 2
+            rest_doubles = [s[1] for s, _ in get_hands(HandKind.DOUBLE, rest)]
 
-    elif kind == 'quadruple plus double':
-        for q, rest in get_hands('bomb', cards):
-
-            doubles = [d[1] for d, _ in get_hands('double', rest)]
-
-            for d in combinations(doubles, 2):
-                d = chain.from_iterable(d)
-                qpd = q[1] + d
-                yield ('plane plus double', qpd), cards_sub(rest, d)
+            for doubles in combinations(rest_doubles, l):
+                doubles = list(chain.from_iterable(doubles))
+                hand_cards = b[1] + doubles
+                yield (kind, hand_cards), cards_sub(rest, doubles)
 
 
-def cmp_hand(kind, left, right):
-    left_kind, *left_cards = left
-    right_kind, *right_cards = right
+def cmp_hands(left, right):
+    left_kind, left_cards = left
+    right_kind, right_cards = right
 
-    assert kind == left_kind == right_kind, 'can not compare different kind of hand'
+    assert left_kind == right_kind, 'can not compare different kind of hand'
 
-    # kind is 14 - rocket, no pass
-    if kind == 'single':
+    kind = left_kind
+    
+    # all HandKind, no ROCKET, no PASS, no ALL
+    if kind in (HandKind.SINGLE,
+                HandKind.DOUBLE,
+                HandKind.TRIPLE, HandKind.TRIPLE_PLUS_SINGLE, HandKind.TRIPLE_PLUS_DOUBLE,
+                HandKind.BOMB):
         return left_cards[0] > right_cards[0]
+    elif kind in (HandKind.STRAIGHT,
+                  HandKind.DOUBLE_STRAIGHT,
+                  HandKind.PLANE, HandKind.PLANE_PLUS_SINGLE, HandKind.PLANE_PLUS_DOUBLE,
+                  HandKind.QUADRUPLE_PLUS_SINGLE, HandKind.QUADRUPLE_PLUS_DOUBLE):
+        return len(left_cards) == len(right_cards) and left_cards[0] > right_cards[0]
 
-
-def possible_hand(cards, cur):
+def possible_hand(cards, played_hand):
     """
     斗地主规则有 14 种牌型，
     - 单张 single
@@ -256,27 +252,27 @@ def possible_hand(cards, cur):
 
     对方出牌后，可以选择不要；如果对方不要，
     """
-    # hand is (kind, cards)
-    kind, points = cur
+    played_hand_kind, played_hand_cards = played_hand
 
-    if kind == 'pass':
-        yield from get_hands('all', cards)
+    if played_hand_kind is HandKind.PASS:
+        yield from get_hands(HandKind.ALL, cards)
         return
-    else:
-        yield from get_hands('pass', cards)
 
-    if kind == 'rocket':
+    if played_hand_kind is HandKind.ROCKET:
+        yield from get_hands(HandKind.PASS, cards)
         return
-    else:
-        yield from get_hands(kind, cards)
 
-    for hand, rest in get_hands(kind, cards):
-        if cmp_hand(kind, hand, cur):
+    yield from get_hands(HandKind.PASS, cards)
+
+    for hand, rest in get_hands(played_hand_kind, cards):
+        if cmp_hands(hand, played_hand):
             yield hand, rest
 
-    if kind != 'bomb':
-        for hand, rest in get_hands('bomb', cards):
+    if kind is not HandKind.BOMB:
+        for hand, rest in get_hands(HandKind.BOMB, cards):
             yield hand, rest
+    
+    yield from get_hands(HandKind.ROCKET, cards)
 
 
 def max_search(me, op, cur):
