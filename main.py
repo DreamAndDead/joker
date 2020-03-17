@@ -280,6 +280,9 @@ def possible_hand(cards, played_hand):
     yield from get_hands(HandKind.ROCKET, cards)
 
 
+def is_legal_hand(kind, cards):
+    pass
+
 def max_search(me, op, played_hand):
     for hand, rest in possible_hand(me, played_hand):
         if len(rest) == 0 or min_search(rest, op, hand)[0] > 0:
@@ -303,21 +306,44 @@ if __name__ == '__main__':
     me = parse_cards(me)
     op = parse_cards(op)
 
-    initial_played_hand = (HandKind.PASS, [])
+    played_hand = (HandKind.PASS, [])
 
     while True:
-        score, me_played_hand = max_search(me, op, initial_played_hand)
+        print(played_hand)
+
+        
+        score, played_hand = max_search(me, op, played_hand)
 
         if score > 0:
-            me = cards_sub(me, me_played_hand[1])
-            print("me play: {}".format(symbolify_cards(me_played_hand[1])))
+            print("me play: {}".format(symbolify_cards(played_hand[1])))
+            
+            me = cards_sub(me, played_hand[1])
 
             if len(me) == 0:
                 print("success")
                 break
 
-            p = input("op play: ").strip()
-            op = cards_sub(op, parse_cards(p))
+            print(played_hand)
+            
+            while True:
+                p = input("op play: ").strip().upper()
+                p = parse_cards(p)
+
+                legal = False
+
+                for hand, rest in possible_hand(op, played_hand):
+                    if sorted(hand[1].copy()) == sorted(p):
+                        played_hand = hand
+                        op = rest
+                        print("op play: ", hand[1])
+                        
+                        legal = True
+                        break
+
+                if legal:
+                    break
+                
+                print("op can't play like that")
         else:
             print("lose")
             break
