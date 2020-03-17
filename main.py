@@ -32,6 +32,8 @@ level_symbol_map = {v: k for k, v in symbol_level_map.items()}
 def parse_cards(card_symbols):
     return list(map(lambda c: symbol_level_map[c], list(card_symbols)))
 
+def symbolify_cards(cards):
+    return list(map(lambda c: level_symbol_map[c], list(cards)))
 
 def cards_in(left, right):
     # if all cards in left is contained by right
@@ -83,8 +85,10 @@ def get_hands(kind, cards):
         yield (kind, []), cards.copy()
 
     elif kind is HandKind.ALL:
-        # todo: yield all kind except pass
-        pass
+        for k in HandKind:
+            if k in (HandKind.PASS, HandKind.ALL):
+                continue
+            yield from get_hands(k, cards)
 
     elif kind is HandKind.SINGLE:
         for c in unique_cards:
@@ -222,6 +226,7 @@ def cmp_hands(left, right):
                   HandKind.QUADRUPLE_PLUS_SINGLE, HandKind.QUADRUPLE_PLUS_DOUBLE):
         return len(left_cards) == len(right_cards) and left_cards[0] > right_cards[0]
 
+
 def possible_hand(cards, played_hand):
     """
     斗地主规则有 14 种牌型，
@@ -268,47 +273,52 @@ def possible_hand(cards, played_hand):
         if cmp_hands(hand, played_hand):
             yield hand, rest
 
-    if kind is not HandKind.BOMB:
+    if played_hand_kind is not HandKind.BOMB:
         for hand, rest in get_hands(HandKind.BOMB, cards):
             yield hand, rest
     
     yield from get_hands(HandKind.ROCKET, cards)
 
 
-def max_search(me, op, cur):
-    for play, rest in possible_hand(me, cur):
-        if len(rest) == 0 or min_search(rest, op, play) > 0:
-            return 1, play
+def max_search(me, op, played_hand):
+    for hand, rest in possible_hand(me, played_hand):
+        if len(rest) == 0 or min_search(rest, op, hand)[0] > 0:
+            return 1, hand
     else:
         return -1, None
 
 
-def min_search(me, op, cur):
-    for play, rest in possible_hand(op, cur):
-        if len(rest) == 0 or max_search(me, rest, play)[0] < 0:
-            return -1
+def min_search(me, op, played_hand):
+    for hand, rest in possible_hand(op, played_hand):
+        if len(rest) == 0 or max_search(me, rest, hand)[0] < 0:
+            return -1, hand
     else:
-        return 1
+        return 1, None
 
 
-'''
-me = input("Input my cards: ").strip().upper()
-op = input("Input op cards: ").strip().upper()
+if __name__ == '__main__':
+    me = input("Input my cards: ").strip().upper()
+    op = input("Input op cards: ").strip().upper()
 
-me = parse_cards(me)
-op = parse_cards(op)
+    me = parse_cards(me)
+    op = parse_cards(op)
 
+    initial_played_hand = (HandKind.PASS, [])
 
     while True:
-        score, play = max_search(me, op, None)
+        score, me_played_hand = max_search(me, op, initial_played_hand)
 
         if score > 0:
-            me.remove(play)
-            print("me play: {}".format(num_to_sym(play)))
+            me = cards_sub(me, me_played_hand[1])
+            print("me play: {}".format(symbolify_cards(me_played_hand[1])))
+
+            if len(me) == 0:
+                print("success")
+                break
 
             p = input("op play: ").strip()
-            op.remove(symbol_level_map[p])
+            op = cards_sub(op, parse_cards(p))
         else:
             print("lose")
             break
-'''
+
