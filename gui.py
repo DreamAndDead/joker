@@ -76,6 +76,9 @@ def merge_cards(cards):
             s[n] = s[n][:sep] + c[n]
 
     return "\n".join(s)
+
+def gui_cards(cards):
+    return merge_cards(make_cards(cards))
             
 if __name__ == '__main__':
     res = merge_cards(make_cards(parse_cards("lb22aa33jkq45690")))

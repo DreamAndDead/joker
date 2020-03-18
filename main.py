@@ -6,7 +6,8 @@
 
 from itertools import combinations
 from itertools import chain
-
+import gui
+from situation import situations
 
 symbol_level_map = {
     "3": 3,
@@ -69,20 +70,20 @@ from enum import Enum, unique
 class HandKind(Enum):
     ALL = -1
     PASS = 0
-    SINGLE = 1
-    STRAIGHT = 2
-    DOUBLE = 3
-    DOUBLE_STRAIGHT = 4
-    TRIPLE = 5
-    TRIPLE_PLUS_SINGLE = 6
-    TRIPLE_PLUS_DOUBLE = 7
-    PLANE = 8
-    PLANE_PLUS_SINGLE = 9
-    PLANE_PLUS_DOUBLE = 10
-    BOMB = 11
-    ROCKET = 12
-    QUADRUPLE_PLUS_SINGLE = 13
-    QUADRUPLE_PLUS_DOUBLE = 14
+    PLANE_PLUS_DOUBLE = 1        # >= 10
+    PLANE_PLUS_SINGLE = 2        # >= 8
+    QUADRUPLE_PLUS_DOUBLE = 3    # 8
+    PLANE = 4                    # >= 6
+    DOUBLE_STRAIGHT = 5          # >= 6
+    QUADRUPLE_PLUS_SINGLE = 6    # 6
+    STRAIGHT = 7                 # >= 5
+    TRIPLE_PLUS_DOUBLE = 8       # 5
+    TRIPLE_PLUS_SINGLE = 9       # 4
+    BOMB = 10                    # 4
+    TRIPLE = 11                  # 3
+    DOUBLE = 12                  # 2
+    ROCKET = 13                  # 2
+    SINGLE = 14                  # 1
 
 def get_hands(kind, cards):
     unique_cards = list(set(cards))
@@ -270,8 +271,6 @@ def possible_hand(cards, played_hand):
         yield from get_hands(HandKind.PASS, cards)
         return
 
-    yield from get_hands(HandKind.PASS, cards)
-
     for hand, rest in get_hands(played_hand_kind, cards):
         if cmp_hands(hand, played_hand):
             yield hand, rest
@@ -281,10 +280,8 @@ def possible_hand(cards, played_hand):
             yield hand, rest
     
     yield from get_hands(HandKind.ROCKET, cards)
+    yield from get_hands(HandKind.PASS, cards)
 
-
-def is_legal_hand(kind, cards):
-    pass
 
 def max_search(me, op, played_hand):
     for hand, rest in possible_hand(me, played_hand):
@@ -293,7 +290,6 @@ def max_search(me, op, played_hand):
     else:
         return -1, None
 
-
 def min_search(me, op, played_hand):
     for hand, rest in possible_hand(op, played_hand):
         if len(rest) == 0 or max_search(me, rest, hand)[0] < 0:
@@ -301,33 +297,41 @@ def min_search(me, op, played_hand):
     else:
         return 1, None
 
+def current_situation(me, op, played_hand):
+    print(gui.gui_cards(op))
+    print(gui.gui_cards(played_hand[1]))
+    print(gui.gui_cards(me))
+    
+def clear():
+    import os
+    os.system('clear')
 
 if __name__ == '__main__':
-    me = input("Input my cards: ").strip()
-    op = input("Input op cards: ").strip()
-
-    me = parse_cards(me)
-    op = parse_cards(op)
+    op, me = situations[0]
+    
+    op = sorted(parse_cards(op), reverse=True)
+    me = sorted(parse_cards(me), reverse=True)
 
     played_hand = (HandKind.PASS, [])
 
     while True:
-        print(played_hand)
-
+        clear()
+        current_situation(me, op, played_hand)
         
         score, played_hand = max_search(me, op, played_hand)
 
         if score > 0:
+            clear()
             print("me play: {}".format(symbolify_cards(played_hand[1])))
             
             me = cards_sub(me, played_hand[1])
 
+            current_situation(me, op, played_hand)
+            
             if len(me) == 0:
                 print("success")
                 break
 
-            print(played_hand)
-            
             while True:
                 p = input("op play: ").strip()
                 p = parse_cards(p)
@@ -335,7 +339,7 @@ if __name__ == '__main__':
                 legal = False
 
                 for hand, rest in possible_hand(op, played_hand):
-                    if sorted(hand[1].copy()) == sorted(p):
+                    if sorted(hand[1]) == sorted(p):
                         played_hand = hand
                         op = rest
                         print("op play: ", hand[1])
