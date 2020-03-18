@@ -28,9 +28,15 @@ symbol_level_map = {
 
 level_symbol_map = {v: k for k, v in symbol_level_map.items()}
 
+BIG_JOKER = symbol_level_map["B"]
+LITTLE_JOKER = symbol_level_map["L"]
+
+BIG_JOKER_SYMBOL = level_symbol_map[BIG_JOKER]
+LITTLE_JOKER_SYMBOL = level_symbol_map[LITTLE_JOKER]
+
 
 def parse_cards(card_symbols):
-    return list(map(lambda c: symbol_level_map[c], list(card_symbols)))
+    return list(map(lambda c: symbol_level_map[c], list(card_symbols.upper())))
 
 def symbolify_cards(cards):
     return list(map(lambda c: level_symbol_map[c], list(cards)))
@@ -178,11 +184,8 @@ def get_hands(kind, cards):
                 yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.ROCKET:
-        little = symbol_level_map['L']
-        big = symbol_level_map['B']
-        
-        if little in cards and big in cards:
-            hand_cards = [little, big]
+        if LITTLE_JOKER in cards and BIG_JOKER in cards:
+            hand_cards = [LITTLE_JOKER, BIG_JOKER]
             yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.QUADRUPLE_PLUS_SINGLE:
@@ -300,8 +303,8 @@ def min_search(me, op, played_hand):
 
 
 if __name__ == '__main__':
-    me = input("Input my cards: ").strip().upper()
-    op = input("Input op cards: ").strip().upper()
+    me = input("Input my cards: ").strip()
+    op = input("Input op cards: ").strip()
 
     me = parse_cards(me)
     op = parse_cards(op)
@@ -326,7 +329,7 @@ if __name__ == '__main__':
             print(played_hand)
             
             while True:
-                p = input("op play: ").strip().upper()
+                p = input("op play: ").strip()
                 p = parse_cards(p)
 
                 legal = False
