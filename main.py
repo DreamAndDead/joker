@@ -298,18 +298,8 @@ def min_search(me, op, played_hand):
     else:
         return 1, None
 
-def current_situation(me, op, played_hand):
-    print(gui.gui_cards(op))
-    print(gui.gui_cards(played_hand[1]))
-    print(gui.gui_cards(me))
-    
-def clear():
-    import os
-    os.system('clear')
-
 if __name__ == '__main__':
     # op, me = situations[0]
-
     op = input("Input op cards: ").strip()
     me = input("Input me cards: ").strip()
     
@@ -317,7 +307,8 @@ if __name__ == '__main__':
     me = sorted(parse_cards(me), reverse=True)
 
     played_hand = (HandKind.PASS, [])
-    current_situation(me, op, played_hand)
+
+    gui.display_table(me, op, played_hand, 'op')
 
     while True:
         score, played_hand = max_search(me, op, played_hand)
@@ -325,9 +316,8 @@ if __name__ == '__main__':
         if score > 0:
             me = cards_sub(me, played_hand[1])
 
-            clear()
             print("me play: {}".format(symbolify_cards(played_hand[1])))
-            current_situation(me, op, played_hand)
+            gui.display_table(me, op, played_hand, 'op')
             
             if len(me) == 0:
                 print("success")
@@ -344,9 +334,8 @@ if __name__ == '__main__':
                         played_hand = hand
                         op = rest
                         
-                        clear()
                         print("op play: ", hand[1])
-                        current_situation(me, op, played_hand)
+                        gui.display_table(me, op, played_hand, 'op')
 
                         import time
                         time.sleep(1)
