@@ -317,7 +317,7 @@ if __name__ == '__main__':
             me = cards_sub(me, played_hand[1])
 
             print("me play: {}".format(symbolify_cards(played_hand[1])))
-            gui.display_table(me, op, played_hand, 'op')
+            gui.display_table(me, op, played_hand, 'me')
             
             if len(me) == 0:
                 print("success")
