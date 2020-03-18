@@ -282,6 +282,7 @@ def possible_hand(cards, played_hand):
     yield from get_hands(HandKind.ROCKET, cards)
     yield from get_hands(HandKind.PASS, cards)
 
+from functools import lru_cache
 
 def max_search(me, op, played_hand):
     for hand, rest in possible_hand(me, played_hand):
@@ -307,25 +308,25 @@ def clear():
     os.system('clear')
 
 if __name__ == '__main__':
-    op, me = situations[0]
+    # op, me = situations[0]
+
+    op = input("Input op cards: ").strip()
+    me = input("Input me cards: ").strip()
     
     op = sorted(parse_cards(op), reverse=True)
     me = sorted(parse_cards(me), reverse=True)
 
     played_hand = (HandKind.PASS, [])
+    current_situation(me, op, played_hand)
 
     while True:
-        clear()
-        current_situation(me, op, played_hand)
-        
         score, played_hand = max_search(me, op, played_hand)
 
         if score > 0:
-            clear()
-            print("me play: {}".format(symbolify_cards(played_hand[1])))
-            
             me = cards_sub(me, played_hand[1])
 
+            clear()
+            print("me play: {}".format(symbolify_cards(played_hand[1])))
             current_situation(me, op, played_hand)
             
             if len(me) == 0:
@@ -342,8 +343,14 @@ if __name__ == '__main__':
                     if sorted(hand[1]) == sorted(p):
                         played_hand = hand
                         op = rest
-                        print("op play: ", hand[1])
                         
+                        clear()
+                        print("op play: ", hand[1])
+                        current_situation(me, op, played_hand)
+
+                        import time
+                        time.sleep(1)
+
                         legal = True
                         break
 
