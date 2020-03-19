@@ -6,7 +6,6 @@
 
 from itertools import combinations
 from itertools import chain
-from situation import situations
 from functools import lru_cache
 import gui
 
@@ -302,10 +301,10 @@ def min_search(me, op, played_hand):
 
 
 if __name__ == '__main__':
-    op, me = situations[0]
+    #op, me = situations[0]
     
-    #op = input("Input op cards: ").strip()
-    #me = input("Input me cards: ").strip()
+    op = input("Input op cards: ").strip()
+    me = input("Input me cards: ").strip()
     
     op = tuple(sorted(parse_cards(op), reverse=True))
     me = tuple(sorted(parse_cards(me), reverse=True))
