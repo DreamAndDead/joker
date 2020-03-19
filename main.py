@@ -6,8 +6,31 @@
 
 from itertools import combinations
 from itertools import chain
-import gui
 from situation import situations
+from functools import lru_cache
+import gui
+
+from enum import Enum, unique
+
+@unique
+class HandKind(Enum):
+    ALL = -1
+    PASS = 0
+    PLANE_PLUS_DOUBLE = 1        # >= 10
+    PLANE_PLUS_SINGLE = 2        # >= 8
+    QUADRUPLE_PLUS_DOUBLE = 3    # 8
+    PLANE = 4                    # >= 6
+    DOUBLE_STRAIGHT = 5          # >= 6
+    QUADRUPLE_PLUS_SINGLE = 6    # 6
+    STRAIGHT = 7                 # >= 5
+    TRIPLE_PLUS_DOUBLE = 8       # 5
+    TRIPLE_PLUS_SINGLE = 9       # 4
+    BOMB = 10                    # 4
+    TRIPLE = 11                  # 3
+    DOUBLE = 12                  # 2
+    ROCKET = 13                  # 2
+    SINGLE = 14                  # 1
+
 
 symbol_level_map = {
     "3": 3,
@@ -37,14 +60,14 @@ LITTLE_JOKER_SYMBOL = level_symbol_map[LITTLE_JOKER]
 
 
 def parse_cards(card_symbols):
-    return list(map(lambda c: symbol_level_map[c], list(card_symbols.upper())))
+    return tuple(map(lambda c: symbol_level_map[c], tuple(card_symbols.upper())))
 
 def symbolify_cards(cards):
-    return list(map(lambda c: level_symbol_map[c], list(cards)))
+    return tuple(map(lambda c: level_symbol_map[c], tuple(cards)))
 
 def cards_in(left, right):
     # if all cards in left is contained by right
-    right_cards = right.copy()
+    right_cards = list(right)
     for c in left:
         if c not in right_cards:
             return False
@@ -52,44 +75,22 @@ def cards_in(left, right):
 
     return True
 
-
 def cards_sub(left, right):
     # left - right
     assert cards_in(right, left), "there exist some cards in right which are not contained in left"
 
-    left_cards = left.copy()
+    left_cards = list(left)
     for c in right:
         left_cards.remove(c)
 
-    return left_cards
+    return tuple(left_cards)
 
-
-from enum import Enum, unique
-
-@unique
-class HandKind(Enum):
-    ALL = -1
-    PASS = 0
-    PLANE_PLUS_DOUBLE = 1        # >= 10
-    PLANE_PLUS_SINGLE = 2        # >= 8
-    QUADRUPLE_PLUS_DOUBLE = 3    # 8
-    PLANE = 4                    # >= 6
-    DOUBLE_STRAIGHT = 5          # >= 6
-    QUADRUPLE_PLUS_SINGLE = 6    # 6
-    STRAIGHT = 7                 # >= 5
-    TRIPLE_PLUS_DOUBLE = 8       # 5
-    TRIPLE_PLUS_SINGLE = 9       # 4
-    BOMB = 10                    # 4
-    TRIPLE = 11                  # 3
-    DOUBLE = 12                  # 2
-    ROCKET = 13                  # 2
-    SINGLE = 14                  # 1
 
 def get_hands(kind, cards):
-    unique_cards = list(set(cards))
+    unique_cards = frozenset(cards)
 
     if kind is HandKind.PASS:
-        yield (kind, []), cards.copy()
+        yield (kind, ()), cards
 
     elif kind is HandKind.ALL:
         for k in HandKind:
@@ -99,7 +100,7 @@ def get_hands(kind, cards):
 
     elif kind is HandKind.SINGLE:
         for c in unique_cards:
-            hand_cards = [c]
+            hand_cards = (c,)
             yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.STRAIGHT:
@@ -108,16 +109,15 @@ def get_hands(kind, cards):
 
         for l in range(min_len, max_len + 1):
             for c in unique_cards:
-                hand_cards = list(range(c, c + l))
+                hand_cards = tuple(range(c, c + l))
                 if cards_in(hand_cards, cards):
                     yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.DOUBLE:
         for c in unique_cards:
-            hand_cards = [c] * 2
+            hand_cards = (c,) * 2
             if cards_in(hand_cards, cards):
                 yield (kind, hand_cards), cards_sub(cards, hand_cards)
-
 
     elif kind is HandKind.DOUBLE_STRAIGHT:
         min_len = 3
@@ -125,13 +125,13 @@ def get_hands(kind, cards):
 
         for l in range(min_len, max_len + 1):
             for c in unique_cards:
-                hand_cards = [e for e in range(c, c+l) for i in range(2)]
+                hand_cards = tuple(e for e in range(c, c+l) for i in range(2))
                 if cards_in(hand_cards, cards):
                     yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.TRIPLE:
         for c in unique_cards:
-            hand_cards = [c] * 3
+            hand_cards = (c,) * 3
             if cards_in(hand_cards, cards):
                 yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
@@ -154,58 +154,58 @@ def get_hands(kind, cards):
 
         for l in range(min_len, max_len + 1):
             for c in unique_cards:
-                hand_cards = [e for e in range(c, c + l) for i in range(3)]
+                hand_cards = tuple(e for e in range(c, c + l) for i in range(3))
                 if cards_in(hand_cards, cards):
                     yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.PLANE_PLUS_SINGLE:
         for p, rest in get_hands(HandKind.PLANE, cards):
             l = len(p[1]) // 3
-            rest_singles = [s[1] for s, _ in get_hands(HandKind.SINGLE, rest)]
+            rest_singles = tuple(s[1] for s, _ in get_hands(HandKind.SINGLE, rest))
 
             for singles in combinations(rest_singles, l):
-                singles = list(chain.from_iterable(singles))
+                singles = tuple(chain.from_iterable(singles))
                 hand_cards = p[1] + singles
                 yield (kind, hand_cards), cards_sub(rest, singles)
 
     elif kind is HandKind.PLANE_PLUS_DOUBLE:
         for p, rest in get_hands(HandKind.PLANE, cards):
             l = len(p[1]) // 3
-            rest_doubles = [d[1] for d, _ in get_hands(HandKind.DOUBLE, rest)]
+            rest_doubles = tuple(d[1] for d, _ in get_hands(HandKind.DOUBLE, rest))
 
             for doubles in combinations(rest_doubles, l):
-                doubles = list(chain.from_iterable(doubles))
+                doubles = tuple(chain.from_iterable(doubles))
                 hand_cards = p[1] + doubles
                 yield (kind, hand_cards), cards_sub(rest, doubles)
 
     elif kind is HandKind.BOMB:
         for c in unique_cards:
-            hand_cards = [c] * 4
+            hand_cards = (c,) * 4
             if cards_in(hand_cards, cards):
                 yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.ROCKET:
         if LITTLE_JOKER in cards and BIG_JOKER in cards:
-            hand_cards = [LITTLE_JOKER, BIG_JOKER]
+            hand_cards = (LITTLE_JOKER, BIG_JOKER)
             yield (kind, hand_cards), cards_sub(cards, hand_cards)
 
     elif kind is HandKind.QUADRUPLE_PLUS_SINGLE:
         for b, rest in get_hands(HandKind.BOMB, cards):
             l = 2
-            rest_singles = [s[1] for s, _ in get_hands(HandKind.SINGLE, rest)]
+            rest_singles = tuple(s[1] for s, _ in get_hands(HandKind.SINGLE, rest))
 
             for singles in combinations(rest_singles, l):
-                singles = list(chain.from_iterable(singles))
+                singles = tuple(chain.from_iterable(singles))
                 hand_cards = b[1] + singles
                 yield (kind, hand_cards), cards_sub(rest, singles)
 
     elif kind is HandKind.QUADRUPLE_PLUS_DOUBLE:
         for b, rest in get_hands(HandKind.BOMB, cards):
             l = 2
-            rest_doubles = [s[1] for s, _ in get_hands(HandKind.DOUBLE, rest)]
+            rest_doubles = tuple(s[1] for s, _ in get_hands(HandKind.DOUBLE, rest))
 
             for doubles in combinations(rest_doubles, l):
-                doubles = list(chain.from_iterable(doubles))
+                doubles = tuple(chain.from_iterable(doubles))
                 hand_cards = b[1] + doubles
                 yield (kind, hand_cards), cards_sub(rest, doubles)
 
@@ -275,15 +275,16 @@ def possible_hand(cards, played_hand):
         if cmp_hands(hand, played_hand):
             yield hand, rest
 
+    yield from get_hands(HandKind.PASS, cards)
+
     if played_hand_kind is not HandKind.BOMB:
         for hand, rest in get_hands(HandKind.BOMB, cards):
             yield hand, rest
     
     yield from get_hands(HandKind.ROCKET, cards)
-    yield from get_hands(HandKind.PASS, cards)
 
-from functools import lru_cache
 
+@lru_cache(maxsize=None)
 def max_search(me, op, played_hand):
     for hand, rest in possible_hand(me, played_hand):
         if len(rest) == 0 or min_search(rest, op, hand)[0] > 0:
@@ -291,6 +292,7 @@ def max_search(me, op, played_hand):
     else:
         return -1, None
 
+@lru_cache(maxsize=None)
 def min_search(me, op, played_hand):
     for hand, rest in possible_hand(op, played_hand):
         if len(rest) == 0 or max_search(me, rest, hand)[0] < 0:
@@ -298,15 +300,19 @@ def min_search(me, op, played_hand):
     else:
         return 1, None
 
-if __name__ == '__main__':
-    # op, me = situations[0]
-    op = input("Input op cards: ").strip()
-    me = input("Input me cards: ").strip()
-    
-    op = sorted(parse_cards(op), reverse=True)
-    me = sorted(parse_cards(me), reverse=True)
 
-    played_hand = (HandKind.PASS, [])
+if __name__ == '__main__':
+    op, me = situations[0]
+    
+    #op = input("Input op cards: ").strip()
+    #me = input("Input me cards: ").strip()
+    
+    op = tuple(sorted(parse_cards(op), reverse=True))
+    me = tuple(sorted(parse_cards(me), reverse=True))
+
+    print(op, me)
+
+    played_hand = (HandKind.PASS, ())
 
     gui.display_table(me, op, played_hand, 'op')
 
@@ -316,12 +322,12 @@ if __name__ == '__main__':
         if score > 0:
             me = cards_sub(me, played_hand[1])
 
+            if len(me) == 0:
+                print('success')
+                break
+
             print("me play: {}".format(symbolify_cards(played_hand[1])))
             gui.display_table(me, op, played_hand, 'me')
-            
-            if len(me) == 0:
-                print("success")
-                break
 
             while True:
                 p = input("op play: ").strip()
@@ -348,6 +354,6 @@ if __name__ == '__main__':
                 
                 print("op can't play like that")
         else:
-            print("lose")
+            print("You can't win in this situation. :(")
             break
 
