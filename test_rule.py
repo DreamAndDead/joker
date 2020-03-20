@@ -1,8 +1,8 @@
 import unittest
 
-from main import parse_cards, cards_in, cards_sub
-from main import HandKind, get_hands
-from main import cmp_hands
+from rule import parse_cards, cards_in, cards_sub
+from rule import HandKind, get_hands
+from rule import cmp_hands
 
 class TestMain(unittest.TestCase):
     def test_list_equal_no_matter_order(self):

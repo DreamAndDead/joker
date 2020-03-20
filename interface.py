@@ -1,5 +1,7 @@
 import os
-import main
+
+from rule import parse_cards, symbolify_cards
+from rule import BIG_JOKER_SYMBOL, LITTLE_JOKER_SYMBOL
 
 
 card = '''
@@ -125,9 +127,9 @@ def stylish_card(card, style='op'):
 def single_card_widget(c, style):
     res = card.format(c, c)
     
-    if c is main.BIG_JOKER_SYMBOL:
+    if c is BIG_JOKER_SYMBOL:
         res = big_joker
-    elif c is main.LITTLE_JOKER_SYMBOL:
+    elif c is LITTLE_JOKER_SYMBOL:
         res = little_joker
 
     return stylish_card(res, style)
@@ -136,7 +138,7 @@ def multi_card_widgets(cards, style):
     if len(cards) == 0:
         return [pass_label[style]]
     else:
-        cards = main.symbolify_cards(cards)
+        cards = symbolify_cards(cards)
         return list(map(lambda c: single_card_widget(c, style), cards))
 
 def merge_card_widgets(cards):
@@ -171,6 +173,6 @@ def display_table(me, op, played_hand, by):
     display_cards(me, 0, 'me')
             
 if __name__ == '__main__':
-    cards = main.parse_cards("bl22aa33jkq45690")
+    cards = parse_cards("bl22aa33jkq45690")
     print(display_cards(cards, 30, 'me'))
     
