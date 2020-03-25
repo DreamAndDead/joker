@@ -32,8 +32,7 @@ $ python main.py
 
 程序运行情况（点击链接到视频）：
 
-[![](https://dreamanddead-github-
-io.oss-cn-hongkong.aliyuncs.com/joker/joker.gif)](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/joker.mp4)
+[![](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/joker.gif)](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/joker.mp4)
 
 
 ## algo
@@ -43,3 +42,10 @@ io.oss-cn-hongkong.aliyuncs.com/joker/joker.gif)](https://dreamanddead-github-io
 最大手牌张数为 20 张，算法运行也没有太大压力（py 单线程加上缓存机制），所有问题分钟内可以出答案。
 
 
+## test
+
+单元测试
+
+```
+$ python -m unittest
+```
