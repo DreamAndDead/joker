@@ -27,11 +27,11 @@ $ python main.py
 
 以专家模式的第 10 关为例，实际游戏情况：
 
-![](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/fight.gif)
+[![](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/fight.gif)](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/fight.mp4)
 
 程序运行情况：
 
-![](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/joker.gif)
+[![](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/joker.gif)](https://dreamanddead-github-io.oss-cn-hongkong.aliyuncs.com/joker/joker.mp4)
 
 
 ## algo
